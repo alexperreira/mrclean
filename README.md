@@ -16,3 +16,9 @@ Optional CSV output via `--out-csv`.
 
 ## Dedupe Report (v1)
 Groups include `size_bytes`, `hash`, and a list of `files` (each with `path` and `os_path`).
+
+## Clean Plan (v1)
+JSON structure:
+- `actions`: list of items with `action` (`delete`, `move`, `archive`) and `path`.
+- `move`/`archive` actions require `destination`.
+Default mode is dry-run; use `--apply` to execute changes.
