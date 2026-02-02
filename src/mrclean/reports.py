@@ -39,8 +39,12 @@ class ScanReport:
         }
 
 
+def write_json(payload: dict, out_path: Path) -> None:
+    out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=True))
+
+
 def write_scan_json(report: ScanReport, out_path: Path) -> None:
-    out_path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=True))
+    write_json(report.to_dict(), out_path)
 
 
 def write_scan_csv(files: Iterable[dict], out_path: Path) -> None:

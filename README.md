@@ -13,3 +13,6 @@ Scaffolded; implementation in progress.
 ## Scan Report (v1)
 JSON fields: `path`, `os_path`, `size_bytes`, `mtime`, `atime`, `ctime`.
 Optional CSV output via `--out-csv`.
+
+## Dedupe Report (v1)
+Groups include `size_bytes`, `hash`, and a list of `files` (each with `path` and `os_path`).
