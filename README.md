@@ -9,3 +9,7 @@ CLI-only tool to scan for old/unused files and duplicate content, with safe clea
 
 ## Status
 Scaffolded; implementation in progress.
+
+## Scan Report (v1)
+JSON fields: `path`, `os_path`, `size_bytes`, `mtime`, `atime`, `ctime`.
+Optional CSV output via `--out-csv`.

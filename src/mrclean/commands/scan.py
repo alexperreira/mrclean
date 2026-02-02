@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
 from mrclean.paths import NormalizedPath, normalize_input_path
+from mrclean.reports import ScanReport, write_scan_csv, write_scan_json
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser("scan", help="Scan paths and emit a report.")
     parser.add_argument("paths", nargs="+", help="Paths to scan.")
     parser.add_argument("--out", default="scan_report.json", help="Output report path.")
+    parser.add_argument("--out-csv", help="Optional CSV output path.")
     parser.add_argument(
         "--exclude",
         action="append",
@@ -49,25 +50,16 @@ def _walk_files(root: NormalizedPath, excludes: list[str], follow_symlinks: bool
 
 def run(args: argparse.Namespace) -> int:
     normalized = [normalize_input_path(p) for p in args.paths]
-    report = {
-        "version": 1,
-        "generated_at": datetime.now(tz=timezone.utc).isoformat(),
-        "roots": [
-            {
-                "input": n.original,
-                "os_path": n.os_path.as_posix(),
-                "style": n.style,
-            }
+    report = ScanReport(
+        roots=[
+            {"input": n.original, "os_path": n.os_path.as_posix(), "style": n.style}
             for n in normalized
-        ],
-        "files": [],
-        "errors": [],
-        "summary": {"files": 0, "errors": 0},
-    }
+        ]
+    )
 
     for root in normalized:
         if not root.os_path.exists():
-            report["errors"].append(
+            report.errors.append(
                 {
                     "input": root.original,
                     "os_path": root.os_path.as_posix(),
@@ -79,7 +71,7 @@ def run(args: argparse.Namespace) -> int:
             try:
                 stat = file_path.stat() if args.follow_symlinks else file_path.lstat()
             except OSError as exc:
-                report["errors"].append(
+                report.errors.append(
                     {
                         "path": root.display_for(file_path),
                         "os_path": file_path.as_posix(),
@@ -87,7 +79,7 @@ def run(args: argparse.Namespace) -> int:
                     }
                 )
                 continue
-            report["files"].append(
+            report.files.append(
                 {
                     "path": root.display_for(file_path),
                     "os_path": file_path.as_posix(),
@@ -98,10 +90,11 @@ def run(args: argparse.Namespace) -> int:
                 }
             )
 
-    report["summary"]["files"] = len(report["files"])
-    report["summary"]["errors"] = len(report["errors"])
-
     out_path = Path(args.out)
-    out_path.write_text(json.dumps(report, indent=2, ensure_ascii=True))
+    write_scan_json(report, out_path)
+    if args.out_csv:
+        write_scan_csv(report.files, Path(args.out_csv))
     print(f"Wrote scan report: {out_path}")
+    if args.out_csv:
+        print(f"Wrote scan CSV: {args.out_csv}")
     return 0
